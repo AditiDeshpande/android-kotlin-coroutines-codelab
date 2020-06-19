@@ -45,7 +45,7 @@ class TitleDaoFake(initialTitle: String) : TitleDao {
      */
     private val insertedForNext = Channel<Title>(capacity = Channel.BUFFERED)
 
-    override fun insertTitle(title: Title) {
+    override suspend fun insertTitle(title: Title) {
         insertedForNext.offer(title)
         _titleLiveData.value = title
     }
@@ -71,7 +71,7 @@ class TitleDaoFake(initialTitle: String) : TitleDao {
      * @param unit timeunit
      * @return the next value that was inserted into this dao, or null if none found
      */
-    fun nextInsertedOrNull(timeout: Long = 2_000): String? {
+    suspend fun nextInsertedOrNull(timeout: Long = 2_000): String? {
         var result: String? = null
         runBlocking {
             // wait for the next insertion to complete
@@ -91,7 +91,7 @@ class TitleDaoFake(initialTitle: String) : TitleDao {
  * Testing Fake implementation of MainNetwork
  */
 class MainNetworkFake(var result: String) : MainNetwork {
-    override fun fetchNextTitle() = MakeCompilerHappyForStarterCode() // TODO: replace with `result`
+    override suspend fun fetchNextTitle() = result
 }
 
 /**
@@ -100,14 +100,15 @@ class MainNetworkFake(var result: String) : MainNetwork {
 class MainNetworkCompletableFake() : MainNetwork {
     private var completable = CompletableDeferred<String>()
 
-    override fun fetchNextTitle() = MakeCompilerHappyForStarterCode() // TODO: replace with `completable.await()`
+   override suspend fun fetchNextTitle() = completable.await()
 
-    fun sendCompletionToAllCurrentRequests(result: String) {
+
+    suspend fun sendCompletionToAllCurrentRequests(result: String) {
         completable.complete(result)
         completable = CompletableDeferred()
     }
 
-    fun sendErrorToCurrentRequests(throwable: Throwable) {
+    suspend fun sendErrorToCurrentRequests(throwable: Throwable) {
         completable.completeExceptionally(throwable)
         completable = CompletableDeferred()
     }
